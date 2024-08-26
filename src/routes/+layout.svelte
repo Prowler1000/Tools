@@ -11,7 +11,7 @@
     <div class="nav-ctr">
         <nav>
             <a href="/">Home</a>
-            <a href="/servers">Servers</a>
+            <a href="/sudoku/solver">Sudoku Solver</a>
         </nav>
     </div>
     <div class="content">
@@ -32,8 +32,9 @@
     nav a {
         margin-left: 10px;
         margin-right: 10px;
+        text-decoration: none;
     }
-    .page-ctr {
+    .content {
     }
 
     :root {
