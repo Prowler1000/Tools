@@ -1,5 +1,6 @@
-import { CloneArray } from "$lib/util";
-import { BufferedMatrix, SudokuBoard, SudokuWorkerMsgType, FlagsManager, type SudokuWorkerMessage } from "./SudokuManager";
+import { SudokuWorkerMsgType, FlagsManager, type SudokuWorkerMessage } from "./SudokuManager";
+import { SudokuBoard } from "./SudokuBoard";
+import { BufferedMatrix } from "./BufferedMatrix";
 
 export default class SudokuWorker {
     private board!: SudokuBoard
@@ -38,18 +39,7 @@ export default class SudokuWorker {
     }
 
     private get_allowed_values(r: number, c: number): number[] {
-        const existing_values: number[] = []
-        existing_values.push(...this.board.GetRow(r));
-        existing_values.push(...this.board.GetColumn(c));
-        existing_values.push(...this.board.GetSquare(c, r).flat());
-
-        const allowed_values: number[] = []
-        for (let i = 1; i < 10; i++) {
-            if (!existing_values.includes(i)) {
-                allowed_values.push(i);
-            }
-        }
-        return allowed_values;
+        return this.board.GetPossibleValues(c, r);
     }
 
     private create_allowed_values(): number[][][] {
