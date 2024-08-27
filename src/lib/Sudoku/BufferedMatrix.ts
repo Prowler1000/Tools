@@ -79,3 +79,8 @@ export class BufferedMatrix {
     }
 }
 
+export function* GridIterator(size_x: number, size_y: number) {
+    for (let y = 0; y < size_y; y++)
+        for (let x = 0; x < size_x; x++)
+            yield [x, y]
+}

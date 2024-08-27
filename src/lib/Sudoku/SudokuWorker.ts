@@ -1,6 +1,7 @@
 import { SudokuWorkerMsgType, FlagsManager, type SudokuWorkerMessage } from "./SudokuManager";
 import { SudokuBoard } from "./SudokuBoard";
-import { BufferedMatrix } from "./BufferedMatrix";
+import { BufferedMatrix, GridIterator } from "./BufferedMatrix";
+import { CloneArray } from "$lib/util";
 
 export default class SudokuWorker {
     private board!: SudokuBoard
@@ -34,36 +35,27 @@ export default class SudokuWorker {
         }
     }
 
-    private send_message(message: SudokuWorkerMessage) {
-        self.postMessage(message);
-    }
-
-    private get_allowed_values(r: number, c: number): number[] {
-        return this.board.GetPossibleValues(c, r);
-    }
-
     private create_allowed_values(): number[][][] {
-        return this.board.Get2DArray().map((row, r_i) => {
-            return row.map((cell, c_i) => {
-                return cell > 0 ? [cell] : this.get_allowed_values(r_i, c_i);
-            })
-        })
+        const allowed_values: number[][][] = Array.from({ length: 9}, () => []);
+        for (const [x,y] of GridIterator(9, 9)) {
+            allowed_values[y].push(this.board.GetPossibleValues(x,y));
+        }
+        return allowed_values;
     }
 
-    private are_knowns(allowed_values?: number[][][]): boolean {
+    private are_knowns(allowed_values?: number[][][], ): boolean {
         allowed_values = allowed_values ?? this.create_allowed_values();
-        let knowns = false;
-        for (let y = 0; y < 9 && !knowns; y++) {
-            for (let x = 0; x < 9 && !knowns; x++) {
-                if (allowed_values[y][x].length === 1) {
-                    knowns = knowns || this.board.GetValue(x, y) === 0;
-                }
-            }
-        }
+        const knowns = allowed_values.some(x => x.some(y => y.length === 1));
         return knowns;
     }
 
     private set_knowns(allowed_values: number[][][]) {
+        for (const [x, y] of GridIterator(9, 9)) {
+            if (allowed_values[y][x].length === 1) {
+                this.board.SetValue(x, y, allowed_values[y][x][0])
+
+            }
+        }
         for (let y = 0; y < 9; y++) {
             for (let x = 0; x < 9; x++) {
                 if (allowed_values[y][x].length === 1 && this.board.GetValue(x,y) === 0) {
@@ -78,8 +70,10 @@ export default class SudokuWorker {
     private solve(): boolean {
         let solved = false;
         console.log(`Is valid initial board: ${this.board.IsValidBoard()}`);
-        while (this.are_knowns()) {
-            this.set_knowns(this.create_allowed_values());
+        let allowed_values = this.create_allowed_values();
+        while (this.are_knowns(allowed_values)) {
+            this.set_knowns(allowed_values);
+            allowed_values = this.create_allowed_values();
         }
         console.log(`Is pre-solved: ${this.board.IsValidBoard(false)}`)
         solved = this.solve_recursive();
@@ -96,7 +90,7 @@ export default class SudokuWorker {
         let min_col = -1;
         for (const [r_i, row] of allowed_values.entries()) {
             for (const [c_i, cell] of row.entries()) {
-                if (cell.length > 1) {
+                if (cell.length > 0) {
                     if (cell.length < prev_min) {
                         prev_min = cell.length;
                         min_row = r_i;
@@ -128,7 +122,12 @@ export default class SudokuWorker {
 
     private test_allowed_values(allowed_values: number[][][]): boolean {
         const old_board = this.board.Get2DArray();
-        const new_board = allowed_values.map(row => row.flat());
+        const new_board = CloneArray(old_board);
+        for (const [x,y] of GridIterator(9,9)) {
+            if (allowed_values[y][x].length > 0) {
+                new_board[y][x] = allowed_values[y][x][0]
+            }
+        };
         this.board.SetGrid(new_board);
         const valid = this.board.IsValidBoard(false);
         if (!valid) {
