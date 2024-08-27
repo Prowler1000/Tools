@@ -72,7 +72,10 @@ export class SudokuBoard {
         return square;
     }
 
-    public GetPossibleValues(x: number, y: number): number[] {
+    public GetPossibleValues(x: number, y: number, ignore_existing_value=false): number[] {
+        if (!ignore_existing_value && this.GetValue(x, y) !== 0) {
+            return []
+        }
         const existing_values: number[] = [
             ...this.GetRow(y),
             ...this.GetColumn(x),
