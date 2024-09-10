@@ -5,9 +5,10 @@ import { BufferedMatrix } from "./BufferedMatrix";
 
 export enum SudokuWorkerMsgType {
     INIT,
-    START_SOLVE,
-    PAUSE_SOLVE,
-    STOP_SOLVE,
+    SOLVE,
+    RESET,
+    SOLVED,
+    UNSOLVABLE,
 }
 
 export interface SudokuWorkerMessage {
@@ -20,7 +21,7 @@ export class FlagsManager {
 
     private FlagArray: typeof FlagsManager.ArrayType;
 
-    private PAUSE_FLAG = 0x80;
+    private RUN_FLAG = 0x80;
     private HALT_FLAG =  0x40;
     private NEW_DATA_FLAG = 0x20;
 
@@ -50,12 +51,12 @@ export class FlagsManager {
         return this.ArrayType.BYTES_PER_ELEMENT * this.FLAG_COUNT;
     }
 
-    public get PAUSE(): boolean {
-        return this.GetFlag(this.PAUSE_FLAG);
+    public get RUN(): boolean {
+        return this.GetFlag(this.RUN_FLAG);
     }
 
-    public set PAUSE(value: boolean) {
-        this.SetFlag(this.PAUSE_FLAG, value);
+    public set RUN(value: boolean) {
+        this.SetFlag(this.RUN_FLAG, value);
     }
 
     public get HALT(): boolean {
@@ -102,6 +103,20 @@ export class SudokuManager {
         });
     }
 
+    public SendMessage(message: SudokuWorkerMessage): void
+    public SendMessage(type: SudokuWorkerMsgType, data?: unknown): void
+    public SendMessage(messageOrType: SudokuWorkerMessage | SudokuWorkerMsgType, data?: unknown) {
+        if (typeof messageOrType === 'object') {
+            this.worker.postMessage(messageOrType);
+        } 
+        else {
+            this.worker.postMessage({
+                type: messageOrType,
+                data: data,
+            });
+        }
+    }
+
     public Empty() {
         this.Matrix.Fill(0);
     }
@@ -116,7 +131,6 @@ export class SudokuManager {
 
     public SetGrid(grid: number[][]): void {
         this.Board.SetGrid(grid);
-        this.Flags.NEW_DATA = true;
     }
 
     public GetGrid(): number[][] {
@@ -124,18 +138,25 @@ export class SudokuManager {
     }
 
     public Start() {
-        this.Flags.PAUSE = false;
+        this.SendMessage(SudokuWorkerMsgType.RESET);
+        this.Flags.RUN = true;
+        this.SendMessage(SudokuWorkerMsgType.SOLVE);
     }
 
     public Pause() {
-        this.Flags.PAUSE = true;
+        this.Flags.RUN = false;
     }
 
     public Toggle() {
-        this.Flags.PAUSE = !this.Flags.PAUSE;
+        if (!this.Flags.RUN) {
+            this.Start();
+        }
+        else {
+            this.Pause();
+        }
     }
 
     public IsSolving() {
-        return !(this.Flags.PAUSE || this.Flags.HALT);
+        return !(this.Flags.RUN || this.Flags.HALT);
     }
 }

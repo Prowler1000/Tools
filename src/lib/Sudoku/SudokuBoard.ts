@@ -1,4 +1,4 @@
-import { BufferedMatrix } from "./BufferedMatrix";
+import { BufferedMatrix, GridIterator } from "./BufferedMatrix";
 
 export class SudokuBoard {
     private grid: BufferedMatrix;
@@ -19,17 +19,21 @@ export class SudokuBoard {
         return this.grid.AsMatrix();
     }
 
-    public IsValidCell(x: number, y: number, value: number =  this.GetValue(x, y)): boolean {
+    public IsValidCell(x: number, y: number, value: number = this.GetValue(x, y), allow_empty: boolean = false): boolean {
         const row = this.GetRow(y).filter(v => v === value);
         const column = this.GetColumn(x).filter(v => v === value);
         const square = this.GetSquare(x, y).flat().filter(v => v === value);
+        const is_empty = value === 0;
         const duplicate_in_row = row.length > 1;
         const duplicate_in_column = column.length > 1;
         const duplicate_in_square = square.length > 1;
-        return (value > 0 && value < 10) &&
+        const within_bounds = value > 0 && value < 10
+        return (is_empty && allow_empty) || (
+            within_bounds &&
             !duplicate_in_row &&
             !duplicate_in_column &&
-            !duplicate_in_square;
+            !duplicate_in_square
+        );
     }
     
     public IsValidBoard(allow_unfilled=true): boolean {
@@ -40,6 +44,30 @@ export class SudokuBoard {
             }
         }
         return valid;
+    }
+
+    public GetAllPossibles(): number[][][] {
+        const values: number[][][] = [];
+        for (let y = 0; y < 9; y++) {
+            values.push([])
+            for (let x = 0; x < 9; x++) {
+                values[y].push(this.GetPossibleValues(x, y, false))
+            }
+        }
+        return values;
+    }
+
+    public GetKnowns(): {[key: number]: { [key: number]: number}} {
+        const knowns: {[key: number]: { [key: number]: number}} = {};
+        for (const [x, y] of GridIterator(9, 9)) {
+            const valid_values = this.GetPossibleValues(x, y, false);
+            if (valid_values.length === 1) {
+                if (!(y in knowns))
+                    knowns[y] = {};
+                knowns[y][x] = valid_values[0];
+            }
+        }
+        return knowns;
     }
 
     public SetGrid(grid: number[][]) {
