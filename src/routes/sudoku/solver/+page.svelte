@@ -43,8 +43,8 @@
     onMount(async () => {
         manager = new SudokuManager();
         manager.Empty();
-        manager.SetGrid(test_grid)
-        //user_grid = manager.GetGrid();
+        //manager.SetGrid(test_grid)
+        user_grid = manager.GetGrid();
         check_cell_validity();
         setInterval(() => {
             solver_grid = manager.GetGrid();
