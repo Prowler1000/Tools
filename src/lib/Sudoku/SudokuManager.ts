@@ -157,6 +157,6 @@ export class SudokuManager {
     }
 
     public IsSolving() {
-        return !(this.Flags.RUN || this.Flags.HALT);
+        return this.Flags.RUN && !this.Flags.HALT;
     }
 }
