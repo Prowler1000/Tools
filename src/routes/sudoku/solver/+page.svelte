@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { SudokuManager } from "$lib/Sudoku/SudokuManager"
+    import { SudokuManager, SudokuWorkerMsgType, type SudokuWorkerMessage } from "$lib/Sudoku/SudokuManager"
 	import { CloneArray } from "$lib/util";
 	import SudokuRow from "$lib/SudokuRow.svelte";
     import { onMount } from "svelte";
@@ -38,12 +38,26 @@
     let working = $state(false);
     let is_valid = $state(true);
 
+    let status = $state("incomplete" as "incomplete" | "solved" | "unsolvable");
+
     let manager: SudokuManager
 
+    function message_handler(ev: MessageEvent) {
+        const data = ev.data as SudokuWorkerMessage;
+        switch (data.type) {
+            case SudokuWorkerMsgType.SOLVED:
+                status = "solved";
+                break;
+            case SudokuWorkerMsgType.UNSOLVABLE:
+                status = "unsolvable";
+                break;
+        }
+    }
+
     onMount(async () => {
-        manager = new SudokuManager();
+        manager = new SudokuManager(message_handler);
         manager.Empty();
-        //manager.SetGrid(test_grid)
+        //manager.SetGrid(test_grid);
         user_grid = manager.GetGrid();
         check_cell_validity();
         setInterval(() => {
@@ -96,6 +110,7 @@
         <button onclick={solve}>{working ? 'Pause' : 'Solve'}</button>
     </div>
     <div class="btn-ctr">Valid Grid: {is_valid}</div>
+    <div class="btn-ctr" style={status === "incomplete" ? '' : status === "solved" ? 'color: green;' : 'color: orange;'}>{status === "incomplete" ? "" : status.toUpperCase()}</div>
 </div>
 
 <style>

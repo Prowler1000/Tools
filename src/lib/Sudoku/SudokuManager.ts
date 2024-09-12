@@ -86,7 +86,7 @@ export class SudokuManager {
 
     private worker: Worker;
 
-    public constructor() {
+    public constructor(callback?: (ev: MessageEvent) => void) {
         const flag_bytes = FlagsManager.NUM_BYTES;
         const grid_bytes = BufferedMatrix.CalculateBytes(9, 9);
 
@@ -94,13 +94,13 @@ export class SudokuManager {
         this.Flags = new FlagsManager(new Uint32Array(this.buffer, 0, FlagsManager.FLAG_COUNT));
         this.Matrix = new BufferedMatrix(9, 9, new Uint32Array(this.buffer, flag_bytes, 81));
         this.Board = new SudokuBoard(this.Matrix);
-
         this.Pause();
         this.worker = new SudokuWorker();
         this.worker.postMessage({
             type: SudokuWorkerMsgType.INIT,
             data: this.buffer,
         });
+        this.worker.onmessage = callback ?? null;
     }
 
     public SendMessage(message: SudokuWorkerMessage): void
