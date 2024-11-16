@@ -12,6 +12,7 @@
         <nav>
             <a href="/">Home</a>
             <a href="/sudoku/solver">Sudoku Solver</a>
+            <a href="/planetary_gear_calc">Planetary Gear Calculator</a>
         </nav>
     </div>
     <div class="content">
@@ -22,6 +23,11 @@
 </div>
 
 <style>
+    .page-ctr {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
     .nav-ctr {
         width: 100%;
         text-align: center;
@@ -35,8 +41,8 @@
         text-decoration: none;
     }
     .content {
+        flex-grow: 1;
     }
-
     :root {
         --select-color: #276cc7;
     }
